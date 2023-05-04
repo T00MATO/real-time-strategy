@@ -222,5 +222,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mainCamera: {fileID: 519420031}
   cursorLocked: 1
-  movementSensitivity: 5
-  mouseDetectBreadth: 16
+  locateSpeed: 5
+  mouseDetectBreadth: 18
+  controlArea:
+    serializedVersion: 2
+    x: -32
+    y: -32
+    width: 64
+    height: 64

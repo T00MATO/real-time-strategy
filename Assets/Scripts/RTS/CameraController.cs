@@ -17,19 +17,30 @@ namespace RTS
             set
             {
                 cursorLocked = value;
-                ValidateCursorLockState();
+                ApplyCursorLock();
             }
         }
 
         [SerializeField]
         [Min(1f)]
-        private float movementSensitivity = 5f;
+        private float locateSpeed = 5f;
 
         [SerializeField]
         [Min(1f)]
         private float mouseDetectBreadth = 16f;
 
-        private Rect cameraViewRect;
+        [SerializeField]
+        private Rect controlArea = new Rect
+        {
+            size = new Vector2(32f, 32f),
+            center = new Vector2(0f, 0f),
+        };
+
+        private Rect viewport;
+        private Rect locatableArea;
+        private Rect mouseDetectArea;
+
+        private float cameraSizeCache;
 
         private void Reset()
         {
@@ -38,68 +49,131 @@ namespace RTS
 
         private void OnValidate()
         {
-            ValidateCursorLockState();
+            Initialize();
+        }
+
+        private void OnDrawGizmosSelected()
+        {
+            Gizmos.color = Color.green;
+            Gizmos.DrawWireCube(controlArea.center, controlArea.size);
+
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireCube(locatableArea.center, locatableArea.size);
+
+            Gizmos.color = Color.white;
+            Gizmos.DrawWireCube(transform.position, viewport.size);
+            
+            Gizmos.color = Color.gray;
+            Gizmos.DrawWireCube(transform.position, mouseDetectArea.size);
         }
 
         private void Awake()
         {
-            InitCameraViewRect();
-
-            ValidateCursorLockState();
+            Initialize();
         }
 
         private void Update()
+        {
+            if (cameraSizeCache != mainCamera.orthographicSize)
+                Initialize();
+        }
+
+        private void FixedUpdate()
         {
             if (!CursorLocked)
                 return;
 
             var mousePosition = Input.mousePosition;
-            VerticalMouseMovement(mousePosition.x);
-            HorizontalMouseMovement(mousePosition.y);
+            LocateCameraX(mousePosition.x);
+            LocateCameraY(mousePosition.y);
+            LimitCameraPosition();
         }
 
-        private void InitCameraViewRect()
+        private void Initialize()
         {
-            var cameraHeight = mainCamera.orthographicSize * 2f;
-            var cameraWidth = cameraHeight * mainCamera.aspect;
-            
-            cameraViewRect.size = new Vector2(cameraWidth, cameraHeight);
-            cameraViewRect.center = new Vector2(0, 0);
+            cameraSizeCache = mainCamera.orthographicSize;
+
+            ApplyCursorLock();
+            InitViewport();
+            InitLocateArea();
+            InitMouseDetectArea();
         }
 
-        private void ValidateCursorLockState()
+        private void ApplyCursorLock()
         {
             Cursor.lockState = cursorLocked ? CursorLockMode.Confined : CursorLockMode.None;
         }
 
-        private void VerticalMouseMovement(float mouseX)
+        private void InitViewport()
+        {
+            var cameraHeight = mainCamera.orthographicSize * 2f;
+            var cameraWidth = cameraHeight * mainCamera.aspect;
+
+            viewport = new Rect
+            {
+                size = new Vector2(cameraWidth, cameraHeight),
+                center = new Vector2(0, 0),
+            };
+        }
+
+        private void InitLocateArea()
+        {
+            locatableArea = new Rect
+            {
+                xMin = controlArea.xMin + Mathf.Abs(viewport.xMin),
+                xMax = controlArea.xMax - Mathf.Abs(viewport.xMax),
+                yMin = controlArea.yMin + Mathf.Abs(viewport.yMin),
+                yMax = controlArea.yMax - Mathf.Abs(viewport.yMax),
+            };
+        }
+        private void InitMouseDetectArea()
+        {
+            mouseDetectArea = new Rect
+            {
+                size = new Vector2
+                {
+                    x = viewport.width * (1f - mouseDetectBreadth * 2f / mainCamera.scaledPixelWidth),
+                    y = viewport.height * (1f - mouseDetectBreadth * 2f / mainCamera.scaledPixelHeight),
+                },
+                center = new Vector2(0, 0),
+            };
+        }
+
+        private void LocateCameraX(float mouseX)
         {
             if (mouseX < mouseDetectBreadth)
             {
-                transform.position += new Vector3(-movementSensitivity * Time.deltaTime, 0);
+                transform.position += new Vector3(-locateSpeed * Time.deltaTime, 0f);
                 return;
             }
 
             if (mouseX > Screen.width - mouseDetectBreadth)
             {
-                transform.position += new Vector3(movementSensitivity * Time.deltaTime, 0);
-                return;
+                transform.position += new Vector3(locateSpeed * Time.deltaTime, 0f);
             }
         }
 
-        private void HorizontalMouseMovement(float mouseY)
+        private void LocateCameraY(float mouseY)
         {
             if (mouseY < mouseDetectBreadth)
             {
-                transform.position += new Vector3(0, -movementSensitivity * Time.deltaTime);
+                transform.position += new Vector3(0f, -locateSpeed * Time.deltaTime);
                 return;
             }
 
             if (mouseY > Screen.height - mouseDetectBreadth)
             {
-                transform.position += new Vector3(0, movementSensitivity * Time.deltaTime);
-                return;
+                transform.position += new Vector3(0f, locateSpeed * Time.deltaTime);
             }
+        }
+
+        private void LimitCameraPosition()
+        {
+            transform.position = new Vector2
+            {
+                x = Mathf.Clamp(transform.position.x, locatableArea.xMin, locatableArea.xMax),
+                y = Mathf.Clamp(transform.position.y, locatableArea.yMin, locatableArea.yMax),
+            };
         }
     }
 }

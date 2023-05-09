@@ -10,9 +10,7 @@ namespace RTS
         [MenuItem("Assets/Create/Real-time strategy/Terrain/Wall tile")]
         private static void CreateAsset()
         {
-            var path = EditorHelper.GetAssetPath("Save terrain wall tile", "New wall tile");
-
-            AssetDatabase.CreateAsset(CreateInstance<WallTile>(), path);
+            AssetManager.CreateWithPanel<WallTile>("Save terrain wall tile", "New wall tile");
         }
 #endif
     }

@@ -16,9 +16,7 @@ namespace RTS
         [MenuItem("Assets/Create/Real-time strategy/Terrain/Floor tile")]
         private static void CreateAsset()
         {
-            var path = EditorHelper.GetAssetPath("Save terrain floor tile", "New floor tile");
-
-            AssetDatabase.CreateAsset(CreateInstance<FloorTile>(), path);
+            AssetManager.CreateWithPanel<FloorTile>("Save terrain floor tile", "New floor tile");
         }
 #endif
     }

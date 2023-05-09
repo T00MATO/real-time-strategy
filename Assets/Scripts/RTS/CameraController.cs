@@ -3,6 +3,7 @@ using UnityEngine;
 namespace RTS
 {
     [RequireComponent(typeof(Camera))]
+    [ExecuteInEditMode]
     public class CameraController : MonoBehaviour
     {
         [SerializeField]
@@ -17,7 +18,7 @@ namespace RTS
             set
             {
                 cursorLocked = value;
-                ApplyCursorLock();
+                SetupCursorMode();
             }
         }
 
@@ -40,8 +41,6 @@ namespace RTS
         private Rect locatableArea;
         private Rect mouseDetectArea;
 
-        private float cameraSizeCache;
-
         private void Reset()
         {
             mainCamera = GetComponent<Camera>();
@@ -49,33 +48,12 @@ namespace RTS
 
         private void OnValidate()
         {
-            Initialize();
-        }
-
-        private void OnDrawGizmosSelected()
-        {
-            Gizmos.color = Color.green;
-            Gizmos.DrawWireCube(controlArea.center, controlArea.size);
-
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawWireCube(locatableArea.center, locatableArea.size);
-
-            Gizmos.color = Color.white;
-            Gizmos.DrawWireCube(transform.position, viewport.size);
-            
-            Gizmos.color = Color.gray;
-            Gizmos.DrawWireCube(transform.position, mouseDetectArea.size);
+            Setup();
         }
 
         private void Awake()
         {
-            Initialize();
-        }
-
-        private void Update()
-        {
-            if (cameraSizeCache != mainCamera.orthographicSize)
-                Initialize();
+            Setup();
         }
 
         private void FixedUpdate()
@@ -89,22 +67,33 @@ namespace RTS
             LimitCameraPosition();
         }
 
-        private void Initialize()
+        private void OnDrawGizmosSelected()
         {
-            cameraSizeCache = mainCamera.orthographicSize;
+            Gizmos.color = Color.green;
+            Gizmos.DrawWireCube(controlArea.center, controlArea.size);
 
-            ApplyCursorLock();
-            InitViewport();
-            InitLocateArea();
-            InitMouseDetectArea();
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireCube(locatableArea.center, locatableArea.size);
+
+            Gizmos.color = Color.white;
+            Gizmos.DrawWireCube(transform.position, viewport.size);
+
+            Gizmos.color = Color.gray;
+            Gizmos.DrawWireCube(transform.position, mouseDetectArea.size);
         }
 
-        private void ApplyCursorLock()
+        private void Setup()
+        {
+            SetupCursorMode();
+            SetupView();
+        }
+
+        private void SetupCursorMode()
         {
             Cursor.lockState = cursorLocked ? CursorLockMode.Confined : CursorLockMode.None;
         }
 
-        private void InitViewport()
+        private void SetupView()
         {
             var cameraHeight = mainCamera.orthographicSize * 2f;
             var cameraWidth = cameraHeight * mainCamera.aspect;
@@ -114,10 +103,7 @@ namespace RTS
                 size = new Vector2(cameraWidth, cameraHeight),
                 center = new Vector2(0, 0),
             };
-        }
 
-        private void InitLocateArea()
-        {
             locatableArea = new Rect
             {
                 xMin = controlArea.xMin + Mathf.Abs(viewport.xMin),
@@ -125,9 +111,7 @@ namespace RTS
                 yMin = controlArea.yMin + Mathf.Abs(viewport.yMin),
                 yMax = controlArea.yMax - Mathf.Abs(viewport.yMax),
             };
-        }
-        private void InitMouseDetectArea()
-        {
+
             mouseDetectArea = new Rect
             {
                 size = new Vector2

@@ -10,7 +10,7 @@ namespace RTS
     public class TerrainManager : MonoBehaviour
     {
         private static readonly Vector3 ISOMETRIC_CELL_SIZE = new Vector3(0.70710678118f, 0.70710678118f, 0f);
-        private static readonly Color ISOMETIC_CELL_OUTLINE_COLOR = new Color(1f, 1f, 1f, 0.5f);
+        private static readonly Color ISOMETRIC_CELL_OUTLINE_COLOR = new Color(1f, 1f, 1f, 0.5f);
 
         [SerializeField]
         private Grid terrainGrid;
@@ -59,7 +59,7 @@ namespace RTS
                 Gizmos.color = GetTerrainGizmosColor(terrainTile);
                 Gizmos.DrawCube(cellPosition, Vector3.one);
                 
-                Gizmos.color = ISOMETIC_CELL_OUTLINE_COLOR;
+                Gizmos.color = ISOMETRIC_CELL_OUTLINE_COLOR;
                 Gizmos.DrawWireCube(cellPosition, Vector3.one);
             }
         }

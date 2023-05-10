@@ -242,6 +242,7 @@ GameObject:
   - component: {fileID: 1575462495}
   - component: {fileID: 1575462498}
   - component: {fileID: 1575462499}
+  - component: {fileID: 1575462501}
   - component: {fileID: 1575462500}
   m_Layer: 0
   m_Name: Terrain Manager
@@ -705,10 +706,23 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1575462494}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: abcb89c9ce5b18a4bb13435bf986f167, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   terrainGrid: {fileID: 1575462495}
   terrainTilemap: {fileID: 1575462498}
+  terrainNavigator: {fileID: 1575462501}
+--- !u!114 &1575462501
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1575462494}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d10c79a0223d1346805f8d5ea1a8217, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

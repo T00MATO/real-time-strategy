@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
 namespace RTS
 {
-    [RequireComponent(typeof(Grid), typeof(Tilemap))]
+    [RequireComponent(typeof(Grid), typeof(Tilemap), typeof(TerrainNavigator))]
     [ExecuteInEditMode]
     public class TerrainManager : MonoBehaviour
     {
@@ -18,12 +17,16 @@ namespace RTS
         [SerializeField]
         private Tilemap terrainTilemap;
 
-        private Dictionary<Vector3Int, TerrainTile> terrainTiles;
+        [SerializeField]
+        private TerrainNavigator terrainNavigator;
+
+        private TerrainTileCache terrainTileCache;
 
         private void Reset()
         {
             terrainGrid = GetComponent<Grid>();
             terrainTilemap = GetComponent<Tilemap>();
+            terrainNavigator = GetComponent<TerrainNavigator>();
         }
 
         private void OnEnable()
@@ -54,7 +57,7 @@ namespace RTS
             var scaleMatrix = Matrix4x4.Scale(terrainGrid.cellSize);
             Gizmos.matrix = scaleMatrix * rotMatrix * isoScaleMatrix * anchorMatrix;
 
-            foreach (var (cellPosition, terrainTile) in terrainTiles)
+            foreach (var (cellPosition, terrainTile) in terrainTileCache)
             {
                 Gizmos.color = GetTerrainGizmosColor(terrainTile);
                 Gizmos.DrawCube(cellPosition, Vector3.one);
@@ -75,11 +78,12 @@ namespace RTS
         private void Setup()
         {
             SetupTerrain();
+            terrainNavigator.Setup(terrainTileCache);
         }
 
         private void SetupTerrain()
         {
-            terrainTiles = new Dictionary<Vector3Int, TerrainTile>();
+            terrainTileCache = new TerrainTileCache();
 
             for (var cellX = terrainTilemap.cellBounds.xMin; cellX < terrainTilemap.cellBounds.xMax; cellX++)
             {
@@ -87,7 +91,7 @@ namespace RTS
                 {
                     var cellPosition = new Vector3Int(cellX, cellY);
                     var terrainTile = terrainTilemap.GetTile<TerrainTile>(cellPosition);
-                    terrainTiles.Add(cellPosition, terrainTile);
+                    terrainTileCache.Add(cellPosition, terrainTile);
                 }
             }
         }
@@ -100,9 +104,6 @@ namespace RTS
             _ => new Color(0f, 0f, 0f, 0f)
         };
 
-        public Vector2[] FindPathes(Vector3Int start, Vector3Int end)
-        {
-            throw new NotImplementedException();
-        }
+        public Queue<Vector3Int> FindPathes(Vector3Int start, Vector3Int end) => terrainNavigator.FindPathes(start, end);
     }
 }

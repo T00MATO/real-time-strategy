@@ -53,10 +53,18 @@ namespace RTS
 
                 var currentNode = CreateStartNode(startTile, start, end);
                 openedNodes.Add(start, currentNode);
+
                 while (currentNode.Position != end)
                 {
-                    SearchBorderNodes(start, currentNode);
-                    currentNode = GetBestOpenedNode();
+                    openedNodes.Remove(currentNode.Position);
+                    closedNodes.Add(currentNode.Position, currentNode);
+
+                    var newOpenedNodes = SearchBorderNodes(start, currentNode);
+
+                    if (newOpenedNodes.Count == 0)
+                        break;
+
+                    currentNode = GetBestNodes(currentNode, newOpenedNodes);
                 }
 
                 var pathes = new List<Vector3Int>();
@@ -87,11 +95,9 @@ namespace RTS
             };
         }
 
-        private void SearchBorderNodes(Vector3Int position, TerrainNaviNode parentNode)
+        private List<TerrainNaviNode> SearchBorderNodes(Vector3Int position, TerrainNaviNode parentNode)
         {
-            openedNodes.Remove(position);
-            closedNodes.Add(position, parentNode);
-
+            var newOpenedNodes = new List<TerrainNaviNode>();
             foreach (var direction in SEARCH_DIRECTIONS)
             {
                 var searchPosition = position + direction.value;
@@ -106,8 +112,12 @@ namespace RTS
                     continue;
 
                 var naviNode = CreateNaviNode(parentNode, searchPosition, direction.cost);
-                AddNaviNode(naviNode);
+                AddNaviNode(naviNode, out var opened);
+                if (opened)
+                    newOpenedNodes.Add(naviNode);
             }
+
+            return newOpenedNodes;
         }
 
         private TerrainNaviNode CreateNaviNode(TerrainNaviNode parentNode, Vector3Int position, int appendCost)
@@ -127,8 +137,10 @@ namespace RTS
             };
         }
 
-        private void AddNaviNode(TerrainNaviNode naviNode)
+        private void AddNaviNode(TerrainNaviNode naviNode, out bool opened)
         {
+            opened = false;
+
             if (naviNode.Tile is FloorTile floorTile)
             {
                 var parentNode = naviNode.ParentNode;
@@ -139,11 +151,13 @@ namespace RTS
                     {
                         var upperPosition = new Vector3Int(naviNode.Position.x, naviNode.Position.y, stairTile.UpperFloor);
                         openedNodes.Add(upperPosition, naviNode);
+                        opened = true;
                     }
                     else if (stairTile.UpperFloor == parentNode.Tile.Floor)
                     {
                         var lowerPosition = new Vector3Int(naviNode.Position.x, naviNode.Position.y, stairTile.Floor);
                         openedNodes.Add(lowerPosition, naviNode);
+                        opened = true;
                     }
                     else
                     {
@@ -156,32 +170,35 @@ namespace RTS
                     if (floorTile.Floor == parentNode.Tile.Floor)
                     {
                         openedNodes.Add(naviNode.Position, naviNode);
+                        opened = true;
                     }
                     else
                     {
                         closedNodes.Add(naviNode.Position, naviNode);
                     }
                 }
-                return;
             }
-
-            if (naviNode.Tile is WallTile)
+            else if (naviNode.Tile is WallTile)
             {
                 closedNodes.Add(naviNode.Position, naviNode);
-
-                return;
             }
         }
 
-        private TerrainNaviNode GetBestOpenedNode()
+        private TerrainNaviNode GetBestNodes(TerrainNaviNode currentNode, List<TerrainNaviNode> newOpenedNodes)
         {
-            var targetNode = new TerrainNaviNode { TotalCost = -1, };
-            foreach (var naviNode in openedNodes.Values)
+            foreach (var naviNode in newOpenedNodes)
             {
-                if (targetNode.TotalCost > naviNode.TotalCost)
-                    targetNode = naviNode;
+                if (currentNode.TotalCost > naviNode.TotalCost)
+                {
+                    currentNode = naviNode;
+                }
+                else if (currentNode.TotalCost == naviNode.TotalCost)
+                {
+                    if (currentNode.FromStart > naviNode.FromStart)
+                        currentNode = naviNode;
+                }
             }
-            return targetNode;
+            return currentNode;
         }
     }
 }

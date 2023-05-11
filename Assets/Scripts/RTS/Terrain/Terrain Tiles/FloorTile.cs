@@ -8,9 +8,9 @@ namespace RTS
     public class FloorTile : TerrainTile
     {
         [SerializeField]
-        [Min(1)]
-        private int floor = 1;
-        public int Floor => floor;
+        [Min(0)]
+        private int floor = 0;
+        public override int Floor => floor;
 
 #if UNITY_EDITOR
         [MenuItem("Assets/Create/Real-time strategy/Terrain/Floor tile")]

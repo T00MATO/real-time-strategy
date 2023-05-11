@@ -20,7 +20,7 @@ namespace RTS
         [SerializeField]
         private TerrainNavigator terrainNavigator;
 
-        private TerrainTileCache terrainTileCache;
+        private Dictionary<Vector3Int, TerrainTile> cachedTiles;
 
         private void Reset()
         {
@@ -55,13 +55,27 @@ namespace RTS
             var isoScaleMatrix = Matrix4x4.Scale(ISOMETRIC_CELL_SIZE);
             var rotMatrix = Matrix4x4.Rotate(Quaternion.Euler(0, 0, 45f));
             var scaleMatrix = Matrix4x4.Scale(terrainGrid.cellSize);
-            Gizmos.matrix = scaleMatrix * rotMatrix * isoScaleMatrix * anchorMatrix;
 
-            foreach (var (cellPosition, terrainTile) in terrainTileCache)
+            var isometricMatrix = scaleMatrix * rotMatrix * isoScaleMatrix * anchorMatrix;
+
+            foreach (var cellPosition in cachedTiles.Keys)
             {
+                if (cellPosition.z == 0)
+                    continue;
+                Gizmos.matrix = isometricMatrix;
+
+                Gizmos.color = new Color(0f, 0f, 0f, 0.5f);
+                Gizmos.DrawWireCube(cellPosition, Vector3.one);
+            }
+
+            foreach (var (cellPosition, terrainTile) in cachedTiles)
+            {
+                var floorMatrix = Matrix4x4.Translate(new Vector3(0, cellPosition.z * terrainGrid.cellSize.y, 0));
+                Gizmos.matrix = floorMatrix * isometricMatrix;
+
                 Gizmos.color = GetTerrainGizmosColor(terrainTile);
                 Gizmos.DrawCube(cellPosition, Vector3.one);
-                
+
                 Gizmos.color = ISOMETRIC_CELL_OUTLINE_COLOR;
                 Gizmos.DrawWireCube(cellPosition, Vector3.one);
             }
@@ -78,32 +92,44 @@ namespace RTS
         private void Setup()
         {
             SetupTerrain();
-            terrainNavigator.Setup(terrainTileCache);
+            terrainNavigator.Setup(cachedTiles);
         }
 
         private void SetupTerrain()
         {
-            terrainTileCache = new TerrainTileCache();
+            cachedTiles = new Dictionary<Vector3Int, TerrainTile>();
 
             for (var cellX = terrainTilemap.cellBounds.xMin; cellX < terrainTilemap.cellBounds.xMax; cellX++)
             {
                 for (var cellY = terrainTilemap.cellBounds.yMin; cellY < terrainTilemap.cellBounds.yMax; cellY++)
                 {
-                    var cellPosition = new Vector3Int(cellX, cellY);
-                    var terrainTile = terrainTilemap.GetTile<TerrainTile>(cellPosition);
-                    terrainTileCache.Add(cellPosition, terrainTile);
+                    var terrainTile = terrainTilemap.GetTile<TerrainTile>(new Vector3Int(cellX, cellY));
+                    
+                    if (terrainTile == null)
+                        continue;
+
+                    cachedTiles.Add(new Vector3Int(cellX, cellY, terrainTile.Floor), terrainTile);
                 }
             }
         }
 
-        private static Color GetTerrainGizmosColor(TerrainTile tile) => tile switch
+        private static Color GetTerrainGizmosColor(TerrainTile terrainTile)
         {
-            FloorTile => new Color(1f, 0f, 0f, 0.5f),
-            StairTile => new Color(0f, 1f, 0f, 0.5f),
-            WallTile => new Color(0f, 0f, 1f, 0.5f),
-            _ => new Color(0f, 0f, 0f, 0f)
-        };
+            if (terrainTile is FloorTile floorTile)
+            {
+                if (floorTile is StairTile)
+                    return new Color(0f, 1f, 0f, 0.5f);
 
-        public Queue<Vector3Int> FindPathes(Vector3Int start, Vector3Int end) => terrainNavigator.FindPathes(start, end);
+                return new Color(1f, 0f, 0f, 0.5f);
+            }
+
+            if (terrainTile is WallTile)
+                return new Color(0f, 0f, 1f, 0.5f);
+
+            throw new UnityException("Tile must be TerrainTile in Terrain Manager.");
+        }
+
+        //  TODO: 길찾기 메소드 구현 필요
+        //public List<Vector3Int> FindPathes(Vector3Int start, Vector3Int end) => terrainNavigator.FindPathes(start, end);
     }
 }

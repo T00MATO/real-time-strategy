@@ -59,12 +59,12 @@ namespace RTS
                     openedNodes.Remove(currentNode.Position);
                     closedNodes.Add(currentNode.Position, currentNode);
 
-                    var newOpenedNodes = SearchBorderNodes(start, currentNode);
+                    var newNodes = SearchBorderNodes(start, currentNode);
 
-                    if (newOpenedNodes.Count == 0)
+                    if (newNodes.Count == 0)
                         break;
 
-                    currentNode = GetBestNodes(currentNode, newOpenedNodes);
+                    currentNode = GetBestNodes(currentNode, newNodes);
                 }
 
                 var pathes = new List<Vector3Int>();
@@ -97,7 +97,7 @@ namespace RTS
 
         private List<TerrainNaviNode> SearchBorderNodes(Vector3Int position, TerrainNaviNode parentNode)
         {
-            var newOpenedNodes = new List<TerrainNaviNode>();
+            var newNodes = new List<TerrainNaviNode>();
             foreach (var direction in SEARCH_DIRECTIONS)
             {
                 var searchPosition = position + direction.value;
@@ -114,10 +114,10 @@ namespace RTS
                 var naviNode = CreateNaviNode(parentNode, searchPosition, direction.cost);
                 AddNaviNode(naviNode, out var opened);
                 if (opened)
-                    newOpenedNodes.Add(naviNode);
+                    newNodes.Add(naviNode);
             }
 
-            return newOpenedNodes;
+            return newNodes;
         }
 
         private TerrainNaviNode CreateNaviNode(TerrainNaviNode parentNode, Vector3Int position, int appendCost)
@@ -184,9 +184,9 @@ namespace RTS
             }
         }
 
-        private TerrainNaviNode GetBestNodes(TerrainNaviNode currentNode, List<TerrainNaviNode> newOpenedNodes)
+        private TerrainNaviNode GetBestNodes(TerrainNaviNode currentNode, List<TerrainNaviNode> newNodes)
         {
-            foreach (var naviNode in newOpenedNodes)
+            foreach (var naviNode in newNodes)
             {
                 if (currentNode.TotalCost > naviNode.TotalCost)
                 {
